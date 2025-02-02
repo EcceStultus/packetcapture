@@ -7,7 +7,6 @@ import packetHandler
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 def start_sniffer(interface):
-
     try:
         logging.info(f"Interface: {interface}")
         logging.info("Starting packet capture: Ctrl+C to stop")
@@ -20,7 +19,6 @@ def start_sniffer(interface):
         logging.error(f"Error: {e}")
 
 def main():
-
     interfaces = conf.ifaces
     print("Interfaces Available: ")
     print(interfaces)
@@ -32,14 +30,12 @@ def main():
         interface = input("Select interface: ")
 
     try:
-
         packetHandler.save_thread = threading.Thread(target=packetHandler.save_to_file, daemon=True)
         packetHandler.save_thread.start()
 
         start_sniffer(interface)
 
     finally:
-
         packetHandler.stop_program.set()
         packetHandler.save_thread.join()
         logging.info("Final packets saved. Exiting")
