@@ -6,24 +6,17 @@ from datetime import datetime
 import threading
 import os
 
-# set basic logging format
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
-# setting/creating pcap file output destination
 capture_directory = "captures"
 os.makedirs(capture_directory, exist_ok=True) # makes said Dir if user hasn't already created one
 
-# interval time for file saves
 save_interval = 300 # 5 minutes
 
-# thread safety
 packet_queue = queue.Queue()
 
-# creates an event (flag initially set to False)
 stop_program = threading.Event()
 
-
-# logs information about each packet
 def log_ip_layer(pkt):
     ip_layer = pkt["IP"]
     logging.info(f"Src IP: {ip_layer.src}, Dst IP: {ip_layer.dst}, Protocol: {ip_layer.proto}")
@@ -49,7 +42,6 @@ def log_raw_layer(pkt):
     raw_layer = pkt["RAW"].load
     logging.info(f"Raw Payload: {raw_layer[:50]}")
 
-# the packet handler itself
 def pkt_handler(pkt):
     if pkt.haslayer("IP"):
         log_ip_layer(pkt)
@@ -69,7 +61,6 @@ def pkt_handler(pkt):
     if pkt.haslayer("RAW"):
         log_raw_layer(pkt)
 
-    # add packet to the queue
     packet_queue.put(pkt)
 
 def save_to_file(): # function to save pcap files at a time interval (multithread)
@@ -78,20 +69,20 @@ def save_to_file(): # function to save pcap files at a time interval (multithrea
 
     start_time = time.time()
     
-    packets = [] # initialize empty list to store packets in memory until file is saved
+    packets = []
 
     while not stop_program.is_set():    # Check stop_program flag, runs while flag is False (unset)
         try:
-            packet = packet_queue.get(timeout=1) # Gets packet from queue
-            packets.append(packet) # appends packet to memory
+            packet = packet_queue.get(timeout=1)
+            packets.append(packet)
         except queue.Empty:
-            continue    # If there is no packet, it tries again
+            continue
 
-        if time.time() - start_time >= save_interval:   # Check if time limit has been surpassed
+        if time.time() - start_time >= save_interval:
             logging.info(f"Time interval surpassed, saving total {len(packets)} packets.")
             wrpcap(file_name, packets) # exports packet list to pcap file
 
-            # reinitialize variables and list
+            # reinitialize
             packets = [] 
             start_time = time.time()
             time_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
